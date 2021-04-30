@@ -7,6 +7,7 @@ use App\Models\coupon;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class ApiController extends Controller
@@ -59,6 +60,29 @@ class ApiController extends Controller
 
         return $user;
     }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param $id
+     * @return boolean
+     */
+    public function password(Request $request, $id) {
+        $enId = Crypt::decryptString($id);
+
+        $use = json_decode($enId, true);
+
+        if (is_array($use)) {
+            User::where('id', $use['id'])->update([
+                'password' => Hash::make($request['password']),
+            ]);
+            return true;
+        }
+        return false;
+
+    }
+
 
     /**
      * Display the specified resource.
@@ -119,8 +143,8 @@ class ApiController extends Controller
      * Display the specified resource.
      *
      * @param  string  id
-     * @param  number  $coupon
-     * @return number
+     * @param  number coupon
+     * @return
      */
     public function verifyCoupon($id, $coupon)
     {
@@ -128,10 +152,10 @@ class ApiController extends Controller
 
         $use = json_decode($enId, true);
 
-        if(is_array($use)){
-            $coupon = coupon::where('code', $coupon)->first();
-            if($coupon){
-                return $coupon->amount;
+        if (is_array($use)) {
+            $coup = coupon::where('code', $coupon)->first();
+            if($coup){
+                return $coup->amount;
             }
             return 1;
         } else {
@@ -150,7 +174,6 @@ class ApiController extends Controller
      */
     public function updateCoupon(Request $request, $id)
     {
-        return $request['coupon'];
         $enId = Crypt::decryptString($id);
 
         $use = json_decode($enId, true);
