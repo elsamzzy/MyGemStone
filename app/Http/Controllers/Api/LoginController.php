@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -92,6 +94,24 @@ class LoginController extends Controller
         if ($user = User::where('id', $enId)->first()) {
             $cred = array('username'=>$user->username, 'password'=>$enPass);
             if (Auth::guard()->attempt($cred)) {
+                $use = $user->toArray();
+                return $use;
+            }
+            return [];
+        }
+        return [];
+    }
+
+    public function getRef($use, User $us) {
+        $encrypt = explode(',', $use);
+
+        $enId = Crypt::decryptString($encrypt[0]);
+        $enPass = Crypt::decryptString($encrypt[1]);
+
+        // $use = json_decode($enId, true);
+        if ($user = User::where('id', $enId)->first()) {
+            $cred = array('username'=>$user->username, 'password'=>$enPass);
+            if (Auth::guard()->attempt($cred)) {
                 $referrals = array();
                 if ($ref=$us->get()->where('user_id', $enId)) {
                     $x=0;
@@ -99,21 +119,47 @@ class LoginController extends Controller
                         if($sub_referral = $us->get()->where('user_id', $value->id)) {
                             $y = 0;
                             foreach($sub_referral as $key) {
-                                $referrals[$value->username][$y] = [$key->username];
+                                if($sub_sub_referral = $us->get()->where('user_id', $key->id)) {
+                                    foreach($sub_sub_referral as $sub_key) {
+                                        $referrals[$value->username][$key->username] = [$sub_key->username];
+                                    }
+                                }
+                                if(empty($referrals[$value->username][$key->username])) {
+                                    $referrals[$value->username][$key->username] = [];      
+                                }
                                 $y++;
                             }
-                        } else {
-                            $referrals[$value->username];
                         }
-
+                        if (empty($referrals[$value->username])) {
+                            $referrals[$value->username] = [];
+                        }
+                        $x++;
                     }
                 };
-                array_push($referrals, $user);
                 return $referrals;
             }
             return [];
         }
         return [];
+    }
+
+
+    public function getCouponAmount($id) {
+        $encrypt = explode(',', $id);
+
+        $enId = Crypt::decryptString($encrypt[0]);
+        $enPass = Crypt::decryptString($encrypt[1]);
+
+        // $use = json_decode($enId, true);
+        if ($user = User::where('id', $enId)->first()) {
+            $cred = array('username'=>$user->username, 'password'=>$enPass);
+            if (Auth::guard()->attempt($cred)) {
+                $coupon = coupon::where('id', $user['coupon_id'])->first();
+                return $coupon['amount'];
+            }
+            return 0;
+        }
+        return 0;
     }
 
     /**
@@ -137,5 +183,57 @@ class LoginController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function changeBank(Request $request, $info) {
+        $encrypt = explode(',', $info);
+
+        $enId = Crypt::decryptString($encrypt[0]);
+        $enPass = Crypt::decryptString($encrypt[1]);
+
+        // $use = json_decode($enId, true);
+        if ($user = User::where('id', $enId)->first()) {
+            $cred = array('username'=>$user->username, 'password'=>$enPass);
+            if (Auth::guard()->attempt($cred)) {
+                if ($request['bank_password'] === $enPass) {
+                    if(User::where('id', $enId)->update(['bank' => $request['bank_name'], 'account_number' => $request['bank_account_number'], 'account_name' => $request['bank_account_name']])) {
+                        return true;
+                    }
+                    return false;
+                }
+                return false;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    public function changePassword(Request $request, $info) {
+        $encrypt = explode(',', $info);
+
+        $enId = Crypt::decryptString($encrypt[0]);
+        $enPass = Crypt::decryptString($encrypt[1]);
+
+        // $use = json_decode($enId, true);
+        if ($user = User::where('id', $enId)->first()) {
+            $cred = array('username'=>$user->username, 'password'=>$enPass);
+            if (Auth::guard()->attempt($cred)) {
+                if($request['old_password'] === $enPass) {
+                    if(strlen($request['password']) > 6) {
+                        if ($request['password'] === $request['password_confirmation']) {
+                            if(User::where('id', $enId)->update(['password' => Hash::make($request['password'])])) {
+                                return true;
+                            }
+                            return false;
+                        }
+                        return 2;
+                    }
+                    return 2;
+                }
+                return 1;
+            }
+            return false;
+        }
+        return false;
     }
 }

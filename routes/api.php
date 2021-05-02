@@ -23,6 +23,11 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::resource('users', ApiController::class);
 Route::resource('login', LoginController::class);
 Route::get('/login/info/{info}', [LoginController::class, 'getInfo']);
+Route::get('/login/ref/{info}', [LoginController::class, 'getRef']);
+Route::get('/login/coupon/{info}', [LoginController::class, 'getCouponAmount']);
+Route::post('/login/password/{info}', [LoginController::class, 'changePassword']);
+Route::post('/login/bank/{info}', [LoginController::class, 'changeBank']);
+
 
 Route::get('/users/email/{user}', [ApiController::class, 'verifyEmail']);
 Route::get('/users/phone/{user}', [ApiController::class, 'verifyPhone']);
