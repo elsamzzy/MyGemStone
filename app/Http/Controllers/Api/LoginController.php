@@ -199,7 +199,7 @@ class LoginController extends Controller
                     if(User::where('id', $enId)->update(['bank' => $request['bank_name'], 'account_number' => $request['bank_account_number'], 'account_name' => $request['bank_account_name']])) {
                         return true;
                     }
-                    return false;
+                    return true;
                 }
                 return false;
             }
@@ -228,7 +228,7 @@ class LoginController extends Controller
                         }
                         return 2;
                     }
-                    return 2;
+                    return 3;
                 }
                 return 1;
             }
